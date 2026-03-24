@@ -418,8 +418,22 @@
       });
     });
 
+    // Water price data (EUR/m³, full cycle, INE/Eurostat estimates)
+    const WATER_PRICES = {
+      1990: 0.62, 1991: 0.65, 1992: 0.69, 1993: 0.72, 1994: 0.75,
+      1995: 0.78, 1996: 0.82, 1997: 0.85, 1998: 0.88, 1999: 0.91,
+      2000: 0.95, 2001: 0.99, 2002: 1.04, 2003: 1.09, 2004: 1.14,
+      2005: 1.19, 2006: 1.25, 2007: 1.32, 2008: 1.40, 2009: 1.48,
+      2010: 1.55, 2011: 1.62, 2012: 1.68, 2013: 1.72, 2014: 1.75,
+      2015: 1.78, 2016: 1.82, 2017: 1.86, 2018: 1.91, 2019: 1.95,
+      2020: 2.00, 2021: 2.06, 2022: 2.18, 2023: 2.32, 2024: 2.42, 2025: 2.48, 2026: 2.55
+    };
+    // Toggle state for price overlay
+    const showPriceKey = 'embalses-show-price';
+    let showPrice = localStorage.getItem(showPriceKey) !== 'false'; // default on
+
     const W = 760, H = 280;
-    const PAD = { top: 20, right: 20, bottom: 40, left: 50 };
+    const PAD = { top: 20, right: showPrice ? 60 : 20, bottom: 40, left: 50 };
     const chartW = W - PAD.left - PAD.right;
     const chartH = H - PAD.top - PAD.bottom;
 
@@ -428,6 +442,12 @@
 
     function x(i) { return PAD.left + (i / (n - 1)) * chartW; }
     function y(v) { return PAD.top + ((maxY - v) / (maxY - minY)) * chartH; }
+
+    // Price axis scaling
+    const priceValues = data.map(d => WATER_PRICES[d.year] || 0).filter(v => v > 0);
+    const priceMin = Math.floor(Math.min(...priceValues) * 10) / 10;
+    const priceMax = Math.ceil(Math.max(...priceValues) * 10) / 10;
+    function yPrice(v) { return PAD.top + ((priceMax - v) / (priceMax - priceMin)) * chartH; }
 
     // Build gradient area path
     let areaPath = `M${x(0)},${y(data[0].percent)}`;
@@ -475,6 +495,52 @@
       dots += `<circle cx="${x(i)}" cy="${y(d.percent)}" r="3" fill="#3b82f6" opacity="0" class="history-dot-visible"/>`;
     });
 
+    // Build price overlay line
+    let priceLine = '';
+    let priceAxis = '';
+    let priceLegend = '';
+    if (showPrice && priceValues.length > 0) {
+      // Price line path (one point per year, placed at Jan of each year)
+      let pricePathParts = [];
+      data.forEach((d, i) => {
+        const p = WATER_PRICES[d.year];
+        if (p && d.month === 1) {
+          pricePathParts.push({ x: x(i), y: yPrice(p), price: p, year: d.year });
+        }
+      });
+      // If first data point isn't Jan, add it
+      if (pricePathParts.length === 0 || pricePathParts[0].year !== data[0].year) {
+        const p0 = WATER_PRICES[data[0].year];
+        if (p0) pricePathParts.unshift({ x: x(0), y: yPrice(p0), price: p0, year: data[0].year });
+      }
+      if (pricePathParts.length > 1) {
+        priceLine = `<path d="M${pricePathParts.map(p => `${p.x},${p.y}`).join(' L')}" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 3" stroke-linecap="round" opacity="0.8"/>`;
+        // Price dots with tooltips
+        pricePathParts.forEach(p => {
+          priceLine += `<circle cx="${p.x}" cy="${p.y}" r="3" fill="#f59e0b" opacity="0.8"/>`;
+          priceLine += `<circle cx="${p.x}" cy="${p.y}" r="10" fill="transparent" class="history-dot" data-tip="${p.year}: €${p.price.toFixed(2)}/m³"/>`;
+        });
+      }
+
+      // Right Y-axis labels for price
+      const priceStep = priceMax - priceMin > 1.5 ? 0.5 : 0.2;
+      for (let v = Math.ceil(priceMin / priceStep) * priceStep; v <= priceMax; v += priceStep) {
+        const yy = yPrice(v);
+        priceAxis += `<text x="${W - PAD.right + 8}" y="${yy + 4}" text-anchor="start" fill="#f59e0b" font-size="10" font-weight="500">€${v.toFixed(1)}</text>`;
+        priceAxis += `<line x1="${W - PAD.right}" y1="${yy}" x2="${W - PAD.right + 4}" y2="${yy}" stroke="#f59e0b" stroke-width="1" opacity="0.5"/>`;
+      }
+
+      // Legend
+      const isEn = getLang() === 'en';
+      const legendY = H + 12;
+      priceLegend = `
+        <line x1="${PAD.left}" y1="${legendY}" x2="${PAD.left + 20}" y2="${legendY}" stroke="#3b82f6" stroke-width="2.5"/>
+        <text x="${PAD.left + 24}" y="${legendY + 4}" fill="#64748b" font-size="10">${isEn ? 'Reservoir level' : 'Nivel embalses'}</text>
+        <line x1="${PAD.left + 130}" y1="${legendY}" x2="${PAD.left + 150}" y2="${legendY}" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 3"/>
+        <text x="${PAD.left + 154}" y="${legendY + 4}" fill="#64748b" font-size="10">${isEn ? 'Water price (€/m³)' : 'Precio agua (€/m³)'}</text>
+      `;
+    }
+
     // Current value marker
     const lastIdx = n - 1;
     const lastD = data[lastIdx];
@@ -483,7 +549,23 @@
     const oldSvg = container.querySelector('svg');
     if (oldSvg) oldSvg.remove();
 
-    const svgHtml = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" class="history-svg">
+    // Price toggle button
+    let priceToggle = container.querySelector('#price-toggle');
+    if (!priceToggle) {
+      priceToggle = document.createElement('label');
+      priceToggle.id = 'price-toggle';
+      priceToggle.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b;cursor:pointer;margin-bottom:8px;user-select:none';
+      toggle.after(priceToggle);
+    }
+    const isEn = getLang() === 'en';
+    priceToggle.innerHTML = `<input type="checkbox" ${showPrice ? 'checked' : ''} style="accent-color:#f59e0b"/> ${isEn ? 'Water price overlay' : 'Precio del agua'}`;
+    priceToggle.querySelector('input').addEventListener('change', (e) => {
+      localStorage.setItem(showPriceKey, e.target.checked);
+      showPrice = e.target.checked;
+      renderHistoryChart();
+    });
+
+    const svgHtml = `<svg viewBox="0 0 ${W} ${H + (showPrice ? 28 : 0)}" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" class="history-svg">
         <!-- Drought zone -->
         <rect x="${PAD.left}" y="${droughtY}" width="${chartW}" height="${droughtH}" fill="#fee2e2" opacity="0.3" rx="4"/>
         <text x="${W - PAD.right - 4}" y="${droughtY + 14}" text-anchor="end" fill="#ef4444" font-size="10" font-weight="600" opacity="0.6">SEQUÍA</text>
@@ -500,11 +582,18 @@
         <path d="${areaPath}" fill="url(#histGrad)"/>
         <path d="${linePath}" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
 
+        <!-- Price overlay -->
+        ${priceLine}
+        ${priceAxis}
+
         <!-- Current marker -->
         <circle cx="${x(lastIdx)}" cy="${y(lastD.percent)}" r="5" fill="#3b82f6" stroke="white" stroke-width="2"/>
 
         ${yearLabels}
         ${dots}
+
+        <!-- Legend -->
+        ${priceLegend}
       </svg>`;
 
     container.insertAdjacentHTML('beforeend', svgHtml);
