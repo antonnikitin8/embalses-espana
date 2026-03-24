@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Embalses de España — Estado actual</title>
+  <meta name="description" content="Panel de estado de los embalses de España. Datos actualizados semanalmente de las comunidades autónomas.">
+  <meta property="og:title" content="Embalses de España">
+  <meta property="og:description" content="Estado actual de los embalses de España por comunidad autónoma.">
+  <meta property="og:type" content="website">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <a href="#main-content" class="skip-link" data-i18n="skipLink">Saltar al contenido</a>
+
+  <header>
+    <div class="nav-inner">
+      <div class="nav-left">
+        <a href="/" class="logo" aria-label="Embalses de España — Inicio">
+          <div class="logo-mark" aria-hidden="true">E</div>
+          <span>Embalses</span>
+        </a>
+        <nav role="tablist" aria-label="Secciones del panel">
+          <button class="tab-btn" role="tab" aria-selected="true" data-tab="principal" data-i18n="tabMain">Principal</button>
+          <button class="tab-btn" role="tab" aria-selected="false" data-tab="region" data-i18n="tabRegion">Por Región</button>
+          <button class="tab-btn" role="tab" aria-selected="false" data-tab="map" data-i18n="tabMap">Mapa</button>
+        </nav>
+      </div>
+      <div class="nav-right">
+        <div class="freshness" id="freshness">
+          <div class="freshness-indicator" aria-hidden="true"></div>
+          <span id="freshness-text"></span>
+        </div>
+        <div class="lang-group" role="group" aria-label="Idioma">
+          <button class="lang-btn" aria-pressed="true" data-lang="es">ES</button>
+          <button class="lang-btn" aria-pressed="false" data-lang="en">EN</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content">
+
+    <div class="page-header">
+      <h1 class="page-title" data-i18n="pageTitle">Panel de Embalses</h1>
+      <p class="page-desc" data-i18n="pageDesc">Estado actual de los embalses de España</p>
+    </div>
+
+    <!-- Stale data alert -->
+    <div class="alert" role="alert" id="stale-alert" hidden>
+      <span class="alert-icon" aria-hidden="true">⚠</span>
+      <span data-i18n="staleAlert">Los datos no se actualizan desde hace más de 10 días.</span>
+    </div>
+
+    <!-- Error alert -->
+    <div class="alert alert-error" role="alert" id="error-alert" hidden>
+      <span class="alert-icon" aria-hidden="true">✕</span>
+      <span id="error-text"></span>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div id="loading-state" class="loading-state">
+      <div class="skeleton-kpi-grid">
+        <div class="skeleton skeleton-hero"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+      <div class="skeleton-region-grid">
+        <div class="skeleton skeleton-region"></div>
+        <div class="skeleton skeleton-region"></div>
+        <div class="skeleton skeleton-region"></div>
+        <div class="skeleton skeleton-region"></div>
+      </div>
+    </div>
+
+    <!-- Principal tab -->
+    <div id="tab-principal" class="tab-panel" role="tabpanel" hidden>
+
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <section class="section" aria-labelledby="regions-title">
+        <div class="section-header">
+          <h2 class="section-title" id="regions-title" data-i18n="sectionRegions">Comunidades Autónomas</h2>
+          <span class="section-count" id="region-count"></span>
+        </div>
+        <div class="region-grid" id="region-grid"></div>
+      </section>
+
+      <section class="section" aria-labelledby="history-title">
+        <div class="section-header">
+          <h2 class="section-title" id="history-title" data-i18n="sectionHistory">Evolución Histórica</h2>
+          <span class="section-count" data-i18n="historyRange">Desde 1990</span>
+        </div>
+        <div class="history-chart-container" id="history-chart"></div>
+      </section>
+
+      <section class="section" aria-labelledby="reservoirs-title">
+        <div class="section-header">
+          <h2 class="section-title" id="reservoirs-title" data-i18n="sectionReservoirs">Embalses Principales</h2>
+          <span class="section-count" id="reservoir-count"></span>
+        </div>
+        <div class="reservoir-grid" id="reservoir-grid"></div>
+      </section>
+
+    </div>
+
+    <!-- Por Región tab -->
+    <div id="tab-region" class="tab-panel" role="tabpanel" hidden>
+      <div class="sort-bar">
+        <span class="sort-label" data-i18n="sortBy">Ordenar por</span>
+        <div class="sort-group" role="group" aria-label="Ordenar">
+          <button class="sort-btn active" data-sort="percent" data-i18n="sortPercent">% Llenado</button>
+          <button class="sort-btn" data-sort="stored" data-i18n="sortVolume">Volumen</button>
+          <button class="sort-btn" data-sort="name" data-i18n="sortName">Nombre</button>
+          <button class="sort-btn" data-sort="change" data-i18n="sortChange">Cambio</button>
+        </div>
+      </div>
+      <div id="region-detail-list"></div>
+    </div>
+
+    <!-- Mapa tab -->
+    <div id="tab-map" class="tab-panel" role="tabpanel" hidden>
+      <div id="spain-map-container" class="map-container"></div>
+    </div>
+
+  </main>
+
+  <footer>
+    <p class="footer-text">
+      <span data-i18n="footerData">Datos:</span>
+      <a href="https://www.embalses.net" target="_blank" rel="noopener">embalses.net</a> ·
+      <span data-i18n="footerMinistry">Ministerio para la Transición Ecológica</span>
+    </p>
+  </footer>
+
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
