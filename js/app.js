@@ -565,7 +565,7 @@
       renderHistoryChart();
     });
 
-    const svgHtml = `<svg viewBox="0 0 ${W} ${H + (showPrice ? 28 : 0)}" width="100%" height="auto" preserveAspectRatio="xMidYMid meet" class="history-svg">
+    const svgHtml = `<svg viewBox="0 0 ${W} ${H + (showPrice ? 28 : 0)}" width="100%" preserveAspectRatio="xMidYMid meet" class="history-svg" style="display:block">
         <!-- Drought zone -->
         <rect x="${PAD.left}" y="${droughtY}" width="${chartW}" height="${droughtH}" fill="#fee2e2" opacity="0.3" rx="4"/>
         <text x="${W - PAD.right - 4}" y="${droughtY + 14}" text-anchor="end" fill="#ef4444" font-size="10" font-weight="600" opacity="0.6">SEQUÍA</text>

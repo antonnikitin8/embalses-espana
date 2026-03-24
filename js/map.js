@@ -391,7 +391,6 @@
     var svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('viewBox', '0 0 1000 800');
     svg.setAttribute('width', '100%');
-    svg.setAttribute('height', 'auto');
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
     svg.style.display = 'block';
 
